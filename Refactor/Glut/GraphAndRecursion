@@ -1,0 +1,174 @@
+#include "..\Inc\SimpleFramework.h"
+#include "..\Inc\gl\freeglut.h"
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+
+class Person
+{
+public:
+	string name;
+	vector<Person*> friends;
+
+	Person(string new_name)
+	{
+		name = new_name;
+	}
+	
+	void AddFriend(Person * new_friend)
+	{
+		friends.push_back(new_friend);
+	}
+
+	Person *GetFriend(unsigned int index)
+	{
+		return friends.at(index);
+	}
+
+	bool IsAFriend(Person &p)
+	{
+		for(size_t i = 0; i < friends.size(); i++)
+		{
+			if (p.name == friends[i]->name)//checks for the name to be the same
+				return true;
+		}
+		return false;
+	}
+
+
+private:
+	
+};
+
+bool AreTheyFriends(Person p1, Person p2)
+{//if they both agree that the other one is their friend then they are friends
+	if(p1.IsAFriend(p2) == true && p2.IsAFriend(p1) == true)
+		return true;
+	else
+		return false;
+}
+
+int DegreeOfSeparation(Person p1, Person p2)
+{
+	class SepTest {
+	public:
+		SepTest() {
+			nesting = 0;
+		}
+		void Nest() {//just tabs us in to show us each time we recurse
+			for (int x = 0; x < nesting; x++)
+				printf("\t");
+		}
+		int InnerTest(Person p1, Person p2)
+		{
+			// p2 is the 'target', p1 is a friend we want to be sure we haven't already tested
+			// return -1 if p1 already tested
+			for (size_t i = 0; i < alreadyTested.size(); i++)//keeps us from testing the same name over repeatedly
+				if (alreadyTested[i] == p1.name)
+					return -1;
+			alreadyTested.push_back(p1.name);//add the person we are testing to the list of names we have tested for later
+
+			nesting++;//tab us in
+
+			if(AreTheyFriends(p1,p2) == true)//we found our link to target
+			{
+				Nest();
+				printf("%s and %s are direct friends!\n", p1.name.c_str(), p2.name.c_str());
+				return 1;
+			}
+			else // check the of current person friends for a link
+			{
+				int minSep = 100000;
+				printf("ELSE, test friend (%s vs %s)\n", p1.name.c_str(), p2.name.c_str());
+				for(size_t i = 0; i < p1.friends.size(); i++) {
+					Nest();
+					printf("testing %s vs. %s\n", p1.friends[i]->name.c_str(), p2.name.c_str());
+					int d = InnerTest(*p1.friends[i], p2);
+					if (d > -1 && d < minSep)
+						minSep = d;
+				}
+				return 1+minSep;
+			}
+		}
+		int nesting;
+		vector<string> alreadyTested;
+	};
+	SepTest s;
+	printf("DegOfSep %s vs %s\n", p1.name.c_str(), p2.name.c_str());
+	return s.InnerTest(p1, p2);
+}
+
+void printTrueFalse(bool tf)// prints true when given true and false when given false
+{
+	if(tf == true)
+		std::cout<<" true ";
+	else
+		std::cout<<" false ";
+}
+
+void PrintFriends(Person &p)//prints out the friends of the person given
+{
+	size_t nfriends = p.friends.size();
+	printf("%s friends: ", p.name.c_str());
+	for (size_t i = 0; i < nfriends; i++)
+		printf("%s%s", p.friends[i]->name.c_str(), i == nfriends-1? "\n" : ", ");
+}
+
+void main()
+{
+	Person Deven("Deven");//create all my people
+	Person Steven("Steven");
+	Person Jason("Jason");
+	Person Ben("Ben");
+	Person Jules("Jules");
+	
+	Deven.AddFriend(&Steven);//people add their friends
+	Steven.AddFriend(&Deven);
+	Steven.AddFriend(&Ben);
+	Ben.AddFriend(&Jason);
+	Jason.AddFriend(&Ben);
+
+	cout<< "added Steven as Devens friend"<<endl;//tell what everyones connection is to each other
+	cout<< "added Deven as Stevens friend"<<endl;
+	cout<< "added Ben as Stevens friend"<<endl;
+	cout<< "added Jason as Bens friend"<<endl;
+	cout<< "added bBen as Jasons friend"<<endl;
+	cout<< endl;
+
+
+	cout << "Steven is Devens friend? =";//check if steven is devens friend
+	printTrueFalse(Deven.IsAFriend(Steven));
+	cout<< endl;
+	cout << "Jason is Devens friend? =";//check if Jason is devens friend
+	printTrueFalse(Deven.IsAFriend(Jason));
+	cout<< endl;
+	cout<< endl;
+
+
+	cout<< "Are Steven and Deven Friends?";//check if Deven and Steven are friends
+	printTrueFalse(AreTheyFriends(Deven, Steven));
+	cout<< endl;
+	cout<< "Are Jason and Deven Friends?";//check if Deven and Jason are friends
+	printTrueFalse(AreTheyFriends(Deven, Jason));
+	cout<< endl;
+	cout<< endl;
+
+	PrintFriends(Jason);//print out everyones friends
+	PrintFriends(Steven);
+	PrintFriends(Deven);
+	PrintFriends(Ben);
+	PrintFriends(Jules);
+		cout<<endl<<endl;
+
+	cout << "The degree of separation between Deven and Jason is "<<DegreeOfSeparation(Deven,Jason)<<endl;
+	cout<<endl;
+	cout << "The degree of separation between Deven and Jules is "<<DegreeOfSeparation(Deven,Jules)<<endl;
+	cout<<endl;
+
+	
+
+	getchar();
+}
